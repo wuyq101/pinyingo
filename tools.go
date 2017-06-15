@@ -19,7 +19,7 @@ var (
 	USE_SEGMENT        = true
 	NO_SEGMENT         = false
 	use_hmm            = true
-	DICT_DIR           = path.Join(os.Getenv("GOPATH"), "src/github.com/struCoder/Go-pinyin/dict")
+	DICT_DIR           = path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/Go-pinyin/dict")
 	DICT_PHRASES       = path.Join(DICT_DIR, "phrases-dict")
 )
 
