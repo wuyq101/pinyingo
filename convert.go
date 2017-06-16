@@ -14,7 +14,7 @@ import (
 	"github.com/yanyiwu/gojieba"
 )
 
-var (
+const (
 	STYLE_NORMAL       = 1
 	STYLE_TONE         = 2
 	STYLE_INITIALS     = 3
@@ -22,18 +22,64 @@ var (
 	USE_SEGMENT        = true
 	NO_SEGMENT         = false
 	use_hmm            = true
-	DICT_DIR           = path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/Go-pinyin/dict")
-	DICT_PHRASES       = path.Join(DICT_DIR, "phrases-dict")
-	dict               []string
 )
+
+var (
+	DICT_DIR     = path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/Go-pinyin/dict")
+	DICT_PHRASES = path.Join(DICT_DIR, "phrases-dict")
+	dict         []string
+	phrasesDict  map[string]string
+	reg          *regexp.Regexp
+	INITIALS     = strings.Split("b,p,m,f,d,t,n,l,g,k,h,j,q,x,r,zh,ch,sh,z,c,s", ",")
+	keyString    string
+	jieba        *gojieba.Jieba
+	sympolMap    = map[string]string{
+		"ā": "a1",
+		"á": "a2",
+		"ǎ": "a3",
+		"à": "a4",
+		"ē": "e1",
+		"é": "e2",
+		"ě": "e3",
+		"è": "e4",
+		"ō": "o1",
+		"ó": "o2",
+		"ǒ": "o3",
+		"ò": "o4",
+		"ī": "i1",
+		"í": "i2",
+		"ǐ": "i3",
+		"ì": "i4",
+		"ū": "u1",
+		"ú": "u2",
+		"ǔ": "u3",
+		"ù": "u4",
+		"ü": "v0",
+		"ǘ": "v2",
+		"ǚ": "v3",
+		"ǜ": "v4",
+		"ń": "n2",
+		"ň": "n3",
+		"": "m2",
+	}
+)
+
+func init() {
+	keyString = getMapKeys()
+	reg = regexp.MustCompile("([" + keyString + "])")
+
+	//初始化时将gojieba实例化到内存
+	jieba = gojieba.NewJieba()
+
+	//初始化多音字到内存
+	initPhrases()
+	//初始化字表
+	dict = make([]string, 200000)
+	loadZi()
+}
 
 func get(index int) string {
 	return dict[index]
-}
-
-func init() {
-	dict = make([]string, 200000)
-	loadZi()
 }
 
 func loadZi() {
@@ -52,52 +98,6 @@ func loadZi() {
 		pinyin := line[start+1 : end]
 		dict[v] = pinyin
 	}
-}
-
-var phrasesDict map[string]string
-var reg *regexp.Regexp
-var INITIALS []string = strings.Split("b,p,m,f,d,t,n,l,g,k,h,j,q,x,r,zh,ch,sh,z,c,s", ",")
-var keyString string
-var jieba *gojieba.Jieba
-var sympolMap = map[string]string{
-	"ā": "a1",
-	"á": "a2",
-	"ǎ": "a3",
-	"à": "a4",
-	"ē": "e1",
-	"é": "e2",
-	"ě": "e3",
-	"è": "e4",
-	"ō": "o1",
-	"ó": "o2",
-	"ǒ": "o3",
-	"ò": "o4",
-	"ī": "i1",
-	"í": "i2",
-	"ǐ": "i3",
-	"ì": "i4",
-	"ū": "u1",
-	"ú": "u2",
-	"ǔ": "u3",
-	"ù": "u4",
-	"ü": "v0",
-	"ǘ": "v2",
-	"ǚ": "v3",
-	"ǜ": "v4",
-	"ń": "n2",
-	"ň": "n3",
-	"": "m2",
-}
-
-func init() {
-	keyString = getMapKeys()
-	reg = regexp.MustCompile("([" + keyString + "])")
-
-	//初始化时将gojieba实例化到内存
-	jieba = gojieba.NewJieba()
-
-	//初始化多音字到内存
-	initPhrases()
 }
 
 func getMapKeys() string {
