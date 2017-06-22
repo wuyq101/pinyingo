@@ -14,26 +14,25 @@ import (
 	"github.com/yanyiwu/gojieba"
 )
 
+// 常量
 const (
-	STYLE_NORMAL       = 1
-	STYLE_TONE         = 2
-	STYLE_INITIALS     = 3
-	STYLE_FIRST_LETTER = 4
-	USE_SEGMENT        = true
-	NO_SEGMENT         = false
-	use_hmm            = true
+	StyleNormal      = 1
+	StyleTone        = 2
+	StyleInitials    = 3
+	StyleFirstLetter = 4
+	UseSegment       = true
+	NoSegment        = false
+	useHmm           = true
 )
 
 var (
-	DICT_DIR     = path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/Go-pinyin/dict")
-	DICT_PHRASES = path.Join(DICT_DIR, "phrases-dict")
-	dict         []string
-	phrasesDict  map[string]string
-	reg          *regexp.Regexp
-	INITIALS     = strings.Split("b,p,m,f,d,t,n,l,g,k,h,j,q,x,r,zh,ch,sh,z,c,s", ",")
-	keyString    string
-	jieba        *gojieba.Jieba
-	sympolMap    = map[string]string{
+	dict        []string
+	phrasesDict map[string]string
+	reg         *regexp.Regexp
+	initials    = strings.Split("b,p,m,f,d,t,n,l,g,k,h,j,q,x,r,zh,ch,sh,z,c,s", ",")
+	keyString   string
+	jieba       *gojieba.Jieba
+	sympolMap   = map[string]string{
 		"ā": "a1",
 		"á": "a2",
 		"ǎ": "a3",
@@ -72,18 +71,21 @@ func init() {
 	jieba = gojieba.NewJieba()
 
 	//初始化多音字到内存
-	initPhrases()
+	loadPhrases()
 	//初始化字表
-	dict = make([]string, 200000)
+	dict = make([]string, 180000)
 	loadZi()
 }
 
 func get(index int) string {
-	return dict[index]
+	if index >= 0 && index < 180000 {
+		return dict[index]
+	}
+	return ""
 }
 
 func loadZi() {
-	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/Go-pinyin/dict/zi.txt")
+	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/zi.txt")
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
@@ -125,8 +127,9 @@ func firstLetter(str string) string {
 	return firstLetter
 }
 
-func initPhrases() {
-	f, err := os.Open(DICT_PHRASES)
+func loadPhrases() {
+	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/phrases.txt")
+	f, err := os.Open(file)
 	defer f.Close()
 	if err != nil {
 		log.Fatal(err)
@@ -137,35 +140,36 @@ func initPhrases() {
 	}
 }
 
-type options struct {
+// Py 拼音对象
+type Py struct {
 	style     int
 	segment   bool
 	heteronym bool
 }
 
-func (opt *options) perStr(pinyinStrs string) string {
-	switch opt.style {
-	case STYLE_INITIALS:
-		for i := 0; i < len(INITIALS); i++ {
-			if strings.Index(pinyinStrs, INITIALS[i]) == 0 {
-				return INITIALS[i]
+func (py *Py) perStr(pinyinStrs string) string {
+	switch py.style {
+	case StyleInitials:
+		for i := 0; i < len(initials); i++ {
+			if strings.Index(pinyinStrs, initials[i]) == 0 {
+				return initials[i]
 			}
 		}
 		return ""
-	case STYLE_TONE:
+	case StyleTone:
 		ret := strings.Split(pinyinStrs, ",")
 		return ret[0]
-	case STYLE_NORMAL:
+	case StyleNormal:
 		ret := strings.Split(pinyinStrs, ",")
 		return normalStr(ret[0])
-	case STYLE_FIRST_LETTER:
+	case StyleFirstLetter:
 		ret := strings.Split(pinyinStrs, ",")
 		return firstLetter(ret[0])
 	}
 	return ""
 }
 
-func (opt *options) doConvert(strs string) []string {
+func (py *Py) doConvert(strs string) []string {
 	//获取字符串的长度
 	bytes := []byte(strs)
 	pinyinArr := make([]string, 0)
@@ -173,8 +177,8 @@ func (opt *options) doConvert(strs string) []string {
 	var tempStr string
 	var single string
 	for len(bytes) > 0 {
-		r, w := utf8.DecodeRune(bytes)
-		bytes = bytes[w:]
+		r, size := utf8.DecodeRune(bytes)
+		bytes = bytes[size:]
 		single = get(int(r))
 		// 中文字符判断
 		tempStr = string(r)
@@ -185,7 +189,7 @@ func (opt *options) doConvert(strs string) []string {
 				pinyinArr = append(pinyinArr, nohans)
 				nohans = ""
 			}
-			pinyinArr = append(pinyinArr, opt.perStr(single))
+			pinyinArr = append(pinyinArr, py.perStr(single))
 		}
 	}
 	//处理末尾非中文的字符串
@@ -194,31 +198,32 @@ func (opt *options) doConvert(strs string) []string {
 	}
 	return pinyinArr
 }
-func (opt *options) Convert(strs string) []string {
+
+// Convert 根据配置返回拼音字符串
+func (py *Py) Convert(strs string) []string {
+	if !py.segment {
+		return py.doConvert(strs)
+	}
 	retArr := make([]string, 0)
-	if opt.segment {
-		jiebaed := jieba.Cut(strs, use_hmm)
-		for _, item := range jiebaed {
-			mapValuesStr, exist := phrasesDict[item]
-			mapValuesArr := strings.Split(mapValuesStr, ",")
-			if exist {
-				for _, v := range mapValuesArr {
-					retArr = append(retArr, opt.perStr(v))
-				}
-			} else {
-				converted := opt.doConvert(item)
-				for _, v := range converted {
-					retArr = append(retArr, v)
-				}
+	jiebaed := jieba.Cut(strs, useHmm)
+	for _, item := range jiebaed {
+		mapValuesStr, exist := phrasesDict[item]
+		mapValuesArr := strings.Split(mapValuesStr, ",")
+		if exist {
+			for _, v := range mapValuesArr {
+				retArr = append(retArr, py.perStr(v))
+			}
+		} else {
+			converted := py.doConvert(item)
+			for _, v := range converted {
+				retArr = append(retArr, v)
 			}
 		}
-	} else {
-		retArr = opt.doConvert(strs)
 	}
-
 	return retArr
 }
 
-func NewPy(style int, segment bool) *options {
-	return &options{style, segment, false}
+// NewPy 返回一个拼音配置对象
+func NewPy(style int, segment bool) *Py {
+	return &Py{style, segment, false}
 }

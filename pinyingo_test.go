@@ -32,7 +32,7 @@ func TestConvert(t *testing.T) {
 	}
 
 	for k, v := range pinyinMap {
-		py := NewPy(STYLE_TONE, NO_SEGMENT)
+		py := NewPy(StyleTone, NoSegment)
 		converted := py.Convert(k)
 		for i := 0; i < len(converted); i++ {
 			if converted[i] != v[i] {
@@ -42,7 +42,7 @@ func TestConvert(t *testing.T) {
 	}
 
 	for k, v := range pinyinMap1 {
-		py := NewPy(STYLE_INITIALS, NO_SEGMENT)
+		py := NewPy(StyleInitials, NoSegment)
 		converted := py.Convert(k)
 		for i := 0; i < len(converted); i++ {
 			if converted[i] != v[i] {
@@ -52,7 +52,7 @@ func TestConvert(t *testing.T) {
 	}
 
 	for k, v := range pinyinMap2 {
-		py := NewPy(STYLE_NORMAL, NO_SEGMENT)
+		py := NewPy(StyleNormal, NoSegment)
 		converted := py.Convert(k)
 		for i := 0; i < len(converted); i++ {
 			if converted[i] != v[i] {
@@ -62,7 +62,7 @@ func TestConvert(t *testing.T) {
 	}
 
 	for k, v := range pinyinMap3 {
-		py := NewPy(STYLE_TONE, USE_SEGMENT)
+		py := NewPy(StyleTone, UseSegment)
 		converted := py.Convert(k)
 		for i := 0; i < len(converted); i++ {
 			if converted[i] != v[i] {
@@ -72,7 +72,7 @@ func TestConvert(t *testing.T) {
 	}
 
 	for k, v := range pinyinMap4 {
-		py := NewPy(STYLE_FIRST_LETTER, USE_SEGMENT)
+		py := NewPy(StyleFirstLetter, UseSegment)
 		converted := py.Convert(k)
 		for i := 0; i < len(converted); i++ {
 			if converted[i] != v[i] {
