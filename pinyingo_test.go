@@ -4,6 +4,10 @@ import (
 	"testing"
 )
 
+func TestInit(t *testing.T) {
+	Init("dict/phrases.txt", "dict/zi.txt")
+}
+
 func TestConvert(t *testing.T) {
 	pinyinMap := map[string][]string{
 		"hello中国": []string{"hello", "zhōng", "guó"},

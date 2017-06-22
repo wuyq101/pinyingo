@@ -2,6 +2,7 @@ package pinyingo
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -71,10 +72,23 @@ func init() {
 	jieba = gojieba.NewJieba()
 
 	//初始化多音字到内存
-	loadPhrases()
+	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/phrases.txt")
+	loadPhrases(file)
 	//初始化字表
 	dict = make([]string, 180000)
-	loadZi()
+	file = path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/zi.txt")
+	loadZi(file)
+}
+
+// Init 用户指定多音词表和汉字库表文件
+func Init(phraseFile, characterFile string) {
+	//清空默认，重新加载
+	for i := 0; i < len(dict); i++ {
+		dict[i] = ""
+	}
+	loadZi(characterFile)
+	phrasesDict = make(map[string]string)
+	loadPhrases(phraseFile)
 }
 
 func get(index int) string {
@@ -84,8 +98,18 @@ func get(index int) string {
 	return ""
 }
 
-func loadZi() {
-	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/zi.txt")
+func exist(file string) bool {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func loadZi(file string) {
+	if !exist(file) {
+		fmt.Fprintf(os.Stderr, "character file %s does not exist\n", file)
+		return
+	}
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
@@ -127,8 +151,11 @@ func firstLetter(str string) string {
 	return firstLetter
 }
 
-func loadPhrases() {
-	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/phrases.txt")
+func loadPhrases(file string) {
+	if !exist(file) {
+		fmt.Fprintf(os.Stderr, "phrases file %s does not exist\n", file)
+		return
+	}
 	f, err := os.Open(file)
 	defer f.Close()
 	if err != nil {
