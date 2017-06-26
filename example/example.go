@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/wuyq101/pinyingo"
 	"github.com/yanyiwu/gojieba"
@@ -29,6 +28,23 @@ func main() {
 		r := py.Convert(s)
 		fmt.Println(r)
 		a := jieba.Cut(s, true)
-		fmt.Println(strings.Join(a, ","))
+		fmt.Println(a)
+		wordinfos := jieba.Tokenize(s, gojieba.SearchMode, true)
+		fmt.Println(s)
+		fmt.Println("Tokenize:(搜索引擎模式)", wordinfos)
 	}
+	/*
+		buf, _ := ioutil.ReadFile("../dict/zi.txt")
+		lines := strings.Split(string(buf), "\n")
+		for _, line := range lines {
+			idx := strings.Index(line, "=")
+			code := line[0 : idx-1]
+			v, _ := strconv.ParseInt(code, 16, 64)
+			start := strings.Index(line, "\"")
+			end := strings.LastIndex(line, "\"")
+			pinyin := line[start+1 : end]
+			r := rune(v)
+	*/
+	//	fmt.Printf("%x = \"%s\" /* %c */\n", v, pinyin, r)
+	//	}
 }
