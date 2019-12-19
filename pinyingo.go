@@ -69,7 +69,7 @@ func init() {
 	reg = regexp.MustCompile("([" + keyString + "])")
 
 	//初始化时将gojieba实例化到内存
-	jieba = gojieba.NewJieba()
+	// jieba = gojieba.NewJieba()
 
 	//初始化多音字到内存
 	file := path.Join(os.Getenv("GOPATH"), "src/github.com/wuyq101/pinyingo/dict/phrases.txt")
@@ -81,14 +81,17 @@ func init() {
 }
 
 // Init 用户指定多音词表和汉字库表文件
-func Init(phraseFile, characterFile string) {
+func Init(confDir string) {
 	//清空默认，重新加载
 	for i := 0; i < len(dict); i++ {
 		dict[i] = ""
 	}
-	loadZi(characterFile)
+
+	jieba = gojieba.NewJieba(confDir+"/jieba.dict.utf8", confDir+"/hmm_model.utf8", confDir+"/user.dict.utf8", confDir+"/idf.utf8", confDir+"/stop_words.utf8")
+
+	loadZi(confDir + "/zi.txt")
 	phrasesDict = make(map[string]string)
-	loadPhrases(phraseFile)
+	loadPhrases(confDir + "/phrases.txt")
 }
 
 func get(index int) string {
